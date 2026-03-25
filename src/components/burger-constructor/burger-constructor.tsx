@@ -1,7 +1,9 @@
 import { FC, useMemo } from 'react';
 import { useDispatch, useSelector } from '../../services/store';
-import { selectConstructorItems } from '../../services/slices/constructorSlice';
-import { clearConstructor } from '../../services/slices/constructorSlice';
+import {
+  selectConstructorItems,
+  clearConstructor
+} from '../../services/slices/constructorSlice';
 import {
   createOrder,
   clearOrderModalData,
@@ -24,24 +26,25 @@ export const BurgerConstructor: FC = () => {
 
   const onOrderClick = () => {
     if (!constructorItems.bun || orderRequest) return;
-
     if (!user) {
       navigate('/login');
       return;
     }
-
     const ingredientIds = [
       constructorItems.bun._id,
       ...constructorItems.ingredients.map((i) => i._id),
       constructorItems.bun._id
     ];
-
-    dispatch(createOrder(ingredientIds));
+    dispatch(createOrder(ingredientIds))
+      .unwrap()
+      .then(() => {
+        dispatch(clearConstructor()); // ✅ только при успехе
+      })
+      .catch(() => {});
   };
 
   const closeOrderModal = () => {
-    dispatch(clearOrderModalData());
-    dispatch(clearConstructor());
+    dispatch(clearOrderModalData()); // ✅ убран clearConstructor отсюда
   };
 
   const price = useMemo(
