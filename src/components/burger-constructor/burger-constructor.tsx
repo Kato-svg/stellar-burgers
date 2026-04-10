@@ -38,13 +38,13 @@ export const BurgerConstructor: FC = () => {
     dispatch(createOrder(ingredientIds))
       .unwrap()
       .then(() => {
-        dispatch(clearConstructor()); // ✅ только при успехе
+        dispatch(clearConstructor());
       })
       .catch(() => {});
   };
 
   const closeOrderModal = () => {
-    dispatch(clearOrderModalData()); // ✅ убран clearConstructor отсюда
+    dispatch(clearOrderModalData());
   };
 
   const price = useMemo(

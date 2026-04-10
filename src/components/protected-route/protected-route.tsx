@@ -19,8 +19,6 @@ export const ProtectedRoute: FC<ProtectedRouteProps> = ({
   const user = useSelector(selectUser);
   const location = useLocation();
 
-  // пока авторизация не проверена — показываем то что есть,
-  // не блокируем рендер
   if (!isAuthChecked) {
     return null;
   }
