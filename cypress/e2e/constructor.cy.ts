@@ -1,3 +1,5 @@
+/// <reference types="cypress" />
+
 const INGREDIENTS = {
   bun: 'Краторная булка N-200i',
   main: 'Биокотлета из марсианской Магнолии',
@@ -12,11 +14,13 @@ const TEXT = {
   orderNumber: '12345'
 };
 
+const SELECTORS = {
+  modalClose: '[data-testid="modal-close"]',
+  modalOverlay: '[data-testid="modal-overlay"]'
+};
+
 describe('constructor page', () => {
   beforeEach(() => {
-    cy.setCookie('accessToken', 'test-access-token');
-    window.localStorage.setItem('refreshToken', 'test-refresh-token');
-
     cy.intercept('GET', '**/ingredients', {
       fixture: 'ingredients.json'
     }).as('getIngredients');
@@ -29,7 +33,13 @@ describe('constructor page', () => {
       fixture: 'order.json'
     }).as('createOrder');
 
-    cy.visit('/');
+    cy.visit('/', {
+      onBeforeLoad(win) {
+        win.localStorage.setItem('refreshToken', 'test-refresh-token');
+      }
+    });
+
+    cy.setCookie('accessToken', 'test-access-token');
     cy.wait('@getIngredients');
   });
 
@@ -45,7 +55,7 @@ describe('constructor page', () => {
   });
 
   it('открывает модальное окно ингредиента и показывает данные выбранного ингредиента', () => {
-    cy.openIngredientModal(INGREDIENTS.bun);
+    cy.contains(INGREDIENTS.bun).click();
 
     cy.contains(TEXT.ingredientDetails).should('exist');
     cy.contains(INGREDIENTS.bun).should('exist');
@@ -53,20 +63,20 @@ describe('constructor page', () => {
   });
 
   it('закрывает модальное окно по клику на крестик', () => {
-    cy.openIngredientModal(INGREDIENTS.bun);
+    cy.contains(INGREDIENTS.bun).click();
 
     cy.contains(TEXT.ingredientDetails).should('exist');
-    cy.closeModalByCross();
+    cy.get(SELECTORS.modalClose).click();
 
     cy.contains(TEXT.ingredientDetails).should('not.exist');
     cy.url().should('eq', 'http://localhost:4000/');
   });
 
   it('закрывает модальное окно по клику на overlay', () => {
-    cy.openIngredientModal(INGREDIENTS.bun);
+    cy.contains(INGREDIENTS.bun).click();
 
     cy.contains(TEXT.ingredientDetails).should('exist');
-    cy.closeModalByOverlay();
+    cy.get(SELECTORS.modalOverlay).click({ force: true });
 
     cy.contains(TEXT.ingredientDetails).should('not.exist');
     cy.url().should('eq', 'http://localhost:4000/');
@@ -75,21 +85,22 @@ describe('constructor page', () => {
   it('добавляет ингредиент в конструктор', () => {
     cy.contains(TEXT.emptyFilling).should('exist');
 
-    cy.addIngredientByName(INGREDIENTS.main);
+    cy.contains(INGREDIENTS.main).parents('li').find('button').click();
 
     cy.contains(TEXT.emptyFilling).should('not.exist');
   });
 
   it('создаёт заказ и очищает конструктор', () => {
-    cy.addIngredientByName(INGREDIENTS.bun);
-    cy.addIngredientByName(INGREDIENTS.main);
+    cy.contains(INGREDIENTS.bun).parents('li').find('button').click();
+
+    cy.contains(INGREDIENTS.main).parents('li').find('button').click();
 
     cy.contains(TEXT.orderButton).click();
 
     cy.wait('@createOrder');
     cy.contains(TEXT.orderNumber).should('exist');
 
-    cy.closeModalByCross();
+    cy.get(SELECTORS.modalClose).click();
 
     cy.contains(TEXT.emptyFilling).should('exist');
     cy.contains(TEXT.emptyBuns).should('exist');
