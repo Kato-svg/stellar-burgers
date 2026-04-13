@@ -1,3 +1,17 @@
+const INGREDIENTS = {
+  bun: 'Краторная булка N-200i',
+  main: 'Биокотлета из марсианской Магнолии',
+  sauce: 'Соус Spicy-X'
+};
+
+const TEXT = {
+  ingredientDetails: 'Детали ингредиента',
+  emptyFilling: 'Выберите начинку',
+  emptyBuns: 'Выберите булки',
+  orderButton: 'Оформить заказ',
+  orderNumber: '12345'
+};
+
 describe('constructor page', () => {
   beforeEach(() => {
     cy.setCookie('accessToken', 'test-access-token');
@@ -19,67 +33,65 @@ describe('constructor page', () => {
     cy.wait('@getIngredients');
   });
 
-  it('открывает главную страницу', () => {
-    cy.contains('Краторная булка N-200i').should('exist');
-    cy.contains('Биокотлета из марсианской Магнолии').should('exist');
-    cy.contains('Соус Spicy-X').should('exist');
+  afterEach(() => {
+    cy.clearCookie('accessToken');
+    cy.clearLocalStorage('refreshToken');
   });
 
-  it('открывает модальное окно ингредиента', () => {
-    cy.contains('Краторная булка N-200i').click();
+  it('открывает главную страницу', () => {
+    cy.contains(INGREDIENTS.bun).should('exist');
+    cy.contains(INGREDIENTS.main).should('exist');
+    cy.contains(INGREDIENTS.sauce).should('exist');
+  });
 
-    cy.contains('Детали ингредиента').should('exist');
+  it('открывает модальное окно ингредиента и показывает данные выбранного ингредиента', () => {
+    cy.openIngredientModal(INGREDIENTS.bun);
+
+    cy.contains(TEXT.ingredientDetails).should('exist');
+    cy.contains(INGREDIENTS.bun).should('exist');
     cy.url().should('include', '/ingredients/643d69a5c3f7b9001cfa093c');
   });
 
   it('закрывает модальное окно по клику на крестик', () => {
-    cy.contains('Краторная булка N-200i').click();
+    cy.openIngredientModal(INGREDIENTS.bun);
 
-    cy.get('[data-testid="modal-close"]').click();
+    cy.contains(TEXT.ingredientDetails).should('exist');
+    cy.closeModalByCross();
 
-    cy.contains('Детали ингредиента').should('not.exist');
+    cy.contains(TEXT.ingredientDetails).should('not.exist');
+    cy.url().should('eq', 'http://localhost:4000/');
   });
 
   it('закрывает модальное окно по клику на overlay', () => {
-    cy.contains('Краторная булка N-200i').click();
+    cy.openIngredientModal(INGREDIENTS.bun);
 
-    cy.get('[data-testid="modal-overlay"]').click({ force: true });
+    cy.contains(TEXT.ingredientDetails).should('exist');
+    cy.closeModalByOverlay();
 
-    cy.contains('Детали ингредиента').should('not.exist');
+    cy.contains(TEXT.ingredientDetails).should('not.exist');
+    cy.url().should('eq', 'http://localhost:4000/');
   });
 
   it('добавляет ингредиент в конструктор', () => {
-    cy.contains('Выберите начинку').should('exist');
+    cy.contains(TEXT.emptyFilling).should('exist');
 
-    cy.contains('Биокотлета из марсианской Магнолии')
-      .parents('li')
-      .find('button')
-      .click();
+    cy.addIngredientByName(INGREDIENTS.main);
 
-    cy.contains('Выберите начинку').should('not.exist');
+    cy.contains(TEXT.emptyFilling).should('not.exist');
   });
 
-  it('создаёт заказ', () => {
-    cy.contains('Краторная булка N-200i').parents('li').find('button').click();
+  it('создаёт заказ и очищает конструктор', () => {
+    cy.addIngredientByName(INGREDIENTS.bun);
+    cy.addIngredientByName(INGREDIENTS.main);
 
-    cy.contains('Биокотлета из марсианской Магнолии')
-      .parents('li')
-      .find('button')
-      .click();
-
-    cy.contains('Оформить заказ').click();
+    cy.contains(TEXT.orderButton).click();
 
     cy.wait('@createOrder');
+    cy.contains(TEXT.orderNumber).should('exist');
 
-    cy.contains('12345').should('exist');
+    cy.closeModalByCross();
 
-    cy.get('[data-testid="modal-close"]').click();
-
-    cy.contains('Выберите начинку').should('exist');
-  });
-
-  afterEach(() => {
-    cy.clearCookie('accessToken');
-    cy.clearLocalStorage('refreshToken');
+    cy.contains(TEXT.emptyFilling).should('exist');
+    cy.contains(TEXT.emptyBuns).should('exist');
   });
 });
